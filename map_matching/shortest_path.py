@@ -1,6 +1,10 @@
 import heapq
 import collections
 
+# heapq.heappush workaround by https://stackoverflow.com/a/39504878
+from itertools import count
+tiebreaker = count()
+
 
 Edge = collections.namedtuple('Edge', ['start_node', 'end_node', 'cost'])
 
@@ -21,7 +25,7 @@ def _pop_unscanned_edge(pqueue, scanned_nodes):
     """
     assert pqueue
     while True:
-        cost_sofar, edge = heapq.heappop(pqueue)
+        cost_sofar, _, edge = heapq.heappop(pqueue)
         if not pqueue or edge.end_node not in scanned_nodes:
             break
     if edge.end_node in scanned_nodes:
@@ -74,7 +78,7 @@ def find_shortest_path(source_node, target_node, get_edges, max_path_cost=None):
         max_path_cost = float('inf')
     if 0 <= max_path_cost:
         # Start with a dummy edge
-        heapq.heappush(pqueue, (0, Edge(None, source_node, 0)))
+        heapq.heappush(pqueue, (0, next(tiebreaker), Edge(None, source_node, 0)))
 
     while pqueue:
         cost_sofar, edge = _pop_unscanned_edge(pqueue, scanned_nodes)
@@ -88,7 +92,7 @@ def find_shortest_path(source_node, target_node, get_edges, max_path_cost=None):
             assert adj_edge.start_node == cur_node
             adj_cost_sofar = cost_sofar + adj_edge.cost
             if adj_cost_sofar <= max_path_cost and adj_edge.end_node not in scanned_nodes:
-                heapq.heappush(pqueue, (adj_cost_sofar, adj_edge))
+                heapq.heappush(pqueue, (adj_cost_sofar, next(tiebreaker), adj_edge))
 
     raise PathNotFound(source_node, target_node, max_path_cost)
 
@@ -112,7 +116,7 @@ def find_many_shortest_paths(source_node, target_nodes, get_edges, max_path_cost
         max_path_cost = float('inf')
     if 0 <= max_path_cost:
         # Start with a dummy edge
-        heapq.heappush(pqueue, (0, Edge(None, source_node, 0)))
+        heapq.heappush(pqueue, (0, next(tiebreaker), Edge(None, source_node, 0)))
 
     while pqueue:
         cost_sofar, edge = _pop_unscanned_edge(pqueue, scanned_nodes)
@@ -130,7 +134,7 @@ def find_many_shortest_paths(source_node, target_nodes, get_edges, max_path_cost
             assert adj_edge.start_node == cur_node
             adj_cost_sofar = cost_sofar + adj_edge.cost
             if adj_cost_sofar <= max_path_cost and adj_edge.end_node not in scanned_nodes:
-                heapq.heappush(pqueue, (adj_cost_sofar, adj_edge))
+                heapq.heappush(pqueue, (adj_cost_sofar, next(tiebreaker), adj_edge))
 
     # (None, -1) means path not found, while ([], 0) means an empty
     # path found (it happens when source and target are the same)
